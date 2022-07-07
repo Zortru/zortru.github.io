@@ -1,4 +1,4 @@
-import 'modules/Reaction.js'
+import './modules/Reaction.js'
 
 test1 = new Reaction
 
