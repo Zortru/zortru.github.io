@@ -4,7 +4,20 @@
 <h1>EnzyView</h1>
 <p></p>
 
+<div class="input">
+    <label for="vmax">Vmax</label>
+    <input type="number" id="vmax" value="1"/>
+    <button id="button" class="btn btn-primary">calcular</button>
+</div>
+
+<label for="resultado" id="labelResultados">resultados</label>
+<input type="text" id="resultado" class="form-control" value="" readonly />
+
+<canvas id="myChart" width="400" height="400"></canvas>
+
 <script type="module" src="main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
 </body>
 </html>
