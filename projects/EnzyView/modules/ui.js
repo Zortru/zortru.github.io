@@ -1,3 +1,20 @@
+const EQUATIONS = {
+  'none':
+    'v = Vmax \u00b7 [S] / (Km + [S])',
+  'competitive':
+    'v = Vmax \u00b7 [S] / (Km \u00b7 (1 + [I]/KI) + [S])',
+  'noncompetitive':
+    'v = (Vmax / (1 + [I]/KI)) \u00b7 [S] / (Km + [S])',
+  'uncompetitive':
+    'v = (Vmax / (1 + [I]/KI)) \u00b7 [S] / (Km/(1 + [I]/KI) + [S])',
+  'partially-competitive':
+    'v = Vmax \u00b7 [S] / (Km \u00b7 (1 + [I]/KI)/(1 + [I]/KSI) + [S])',
+  'partially-noncompetitive':
+    'v = ((Vmax + k\u2082I \u00b7 [E]T \u00b7 [I]/KI) / (1 + [I]/KI)) \u00b7 [S] / (Km + [S])',
+  'substrate':
+    'v = Vmax \u00b7 [S] / (Km + [S] + [S]\u00b2/KSI)',
+};
+
 const INHIBITION_FIELDS = {
   'none': [],
   'competitive': ['I', 'KI'],
@@ -39,6 +56,9 @@ export class UIManager {
     this.fieldk2I = document.getElementById('field-k2I');
     this.fieldET = document.getElementById('field-ET');
 
+    // Equation display
+    this.equationDisplay = document.getElementById('equation-display');
+
     // Deactivation
     this.deactivationGroup = document.getElementById('deactivation-group');
     this.deactivationCheckbox = document.getElementById('deactivation');
@@ -73,6 +93,9 @@ export class UIManager {
       const el = document.getElementById(`field-${f}`);
       if (el) el.classList.toggle('hidden', !fields.includes(f));
     });
+
+    // Update equation display
+    this.equationDisplay.textContent = EQUATIONS[type] || EQUATIONS['none'];
 
     // Update slider param options
     this._updateSliderParams(type);

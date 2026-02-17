@@ -25,11 +25,15 @@ ui.deactivationCheckbox.addEventListener('change', () => {
 
 ui.calculateBtn.addEventListener('click', calculate);
 
+const downloadBtn = document.getElementById('download-btn');
+downloadBtn.addEventListener('click', downloadCSV);
+
 ui.resetBtn.addEventListener('click', () => {
   ui.resetDefaults();
   charts.destroy();
   lastResults = null;
   lastInputs = null;
+  downloadBtn.disabled = true;
 });
 
 // ── Slider ──────────────────────────────────────────
@@ -107,4 +111,42 @@ function calculate() {
 
   // Configure slider with current state
   ui.configureSlider();
+  downloadBtn.disabled = false;
+}
+
+// ── CSV Download ────────────────────────────────────
+
+function downloadCSV() {
+  if (!lastResults || !lastInputs) return;
+
+  let csv = '';
+
+  if (lastInputs.mode === 'batch') {
+    csv = 'Time,S1,S2,P1,P2,Conversion,Rate\n';
+    for (let i = 0; i < lastResults.t.length; i++) {
+      csv += [
+        lastResults.t[i],
+        lastResults.S1[i],
+        lastResults.S2[i],
+        lastResults.P1[i],
+        lastResults.P2[i],
+        lastResults.X[i],
+        lastResults.v[i],
+      ].join(',') + '\n';
+    }
+  } else {
+    csv = 'Reactor,S1,S2,P1,P2,Conversion,Rate\n';
+    for (let i = 0; i < lastResults.length; i++) {
+      const r = lastResults[i];
+      csv += [i + 1, r.S1, r.S2, r.P1, r.P2, r.X, r.v].join(',') + '\n';
+    }
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `enzyview_${lastInputs.mode}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

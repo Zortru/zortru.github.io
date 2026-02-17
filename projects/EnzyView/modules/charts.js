@@ -1,5 +1,12 @@
-const ACCENT = '#00FF67';
 const COLORS = ['#00FF67', '#FF6384', '#36A2EB', '#FFCE56'];
+
+function formatTick(value) {
+  if (Math.abs(value) >= 1000 || (Math.abs(value) < 0.01 && value !== 0)) {
+    return value.toExponential(1);
+  }
+  // Strip trailing zeros: 12.50 → 12.5, 10.00 → 10
+  return parseFloat(value.toPrecision(4)).toString();
+}
 
 function baseOptions(title) {
   return {
@@ -9,7 +16,17 @@ function baseOptions(title) {
     plugins: {
       title: { display: true, text: title, color: '#f5f5f5', font: { size: 14 } },
       legend: { display: false },
-      tooltip: { mode: 'nearest', intersect: false },
+      tooltip: {
+        mode: 'nearest',
+        intersect: false,
+        callbacks: {
+          label: ctx => {
+            const x = formatTick(ctx.parsed.x);
+            const y = formatTick(ctx.parsed.y);
+            return `(${x}, ${y})`;
+          },
+        },
+      },
       zoom: {
         pan: { enabled: true, mode: 'xy' },
         zoom: {
@@ -21,17 +38,35 @@ function baseOptions(title) {
     },
     scales: {
       x: {
-        ticks: { color: '#888' },
+        type: 'linear',
+        ticks: {
+          color: '#888',
+          maxTicksLimit: 8,
+          callback: formatTick,
+        },
         grid: { color: '#222' },
         title: { display: true, color: '#888' },
       },
       y: {
-        ticks: { color: '#888' },
+        type: 'linear',
+        ticks: {
+          color: '#888',
+          maxTicksLimit: 8,
+          callback: formatTick,
+        },
         grid: { color: '#222' },
         title: { display: true, color: '#888' },
       },
     },
   };
+}
+
+function zipXY(xArr, yArr) {
+  const pts = [];
+  for (let i = 0; i < xArr.length; i++) {
+    pts.push({ x: xArr[i], y: yArr[i] });
+  }
+  return pts;
 }
 
 function createCanvas(container, id) {
@@ -71,21 +106,21 @@ export class ChartManager {
     this.container.innerHTML = '';
   }
 
-  _createChart(canvasId, title, xLabel, yLabel, data, colorIdx = 0) {
+  _createChart(canvasId, title, xLabel, yLabel, xArr, yArr, colorIdx = 0) {
     const { canvas, resetBtn } = createCanvas(this.container, canvasId);
     const opts = baseOptions(title);
     opts.scales.x.title.text = xLabel;
     opts.scales.y.title.text = yLabel;
 
     const chart = new Chart(canvas, {
-      type: 'line',
+      type: 'scatter',
       data: {
-        labels: data.x,
         datasets: [{
-          data: data.y,
+          data: zipXY(xArr, yArr),
           borderColor: COLORS[colorIdx % COLORS.length],
           borderWidth: 1.5,
           pointRadius: 0,
+          showLine: true,
           tension: 0,
         }],
       },
@@ -102,16 +137,16 @@ export class ChartManager {
     this.container.className = 'chart-grid batch';
 
     this._createChart('chart-s-t', 'Substrate vs Time', 'Time', 'Concentration',
-      { x: results.t, y: results.S1 }, 0);
+      results.t, results.S1, 0);
 
     this._createChart('chart-p-t', 'Product vs Time', 'Time', 'Concentration',
-      { x: results.t, y: results.P1 }, 1);
+      results.t, results.P1, 1);
 
     this._createChart('chart-x-t', 'Conversion vs Time', 'Time', 'Conversion',
-      { x: results.t, y: results.X }, 2);
+      results.t, results.X, 2);
 
-    this._createChart('chart-v-s', 'Rate vs Substrate', 'Substrate Concentration', 'Rate',
-      { x: results.S1, y: results.v }, 3);
+    this._createChart('chart-v-s', 'Rate vs Substrate', '[S]', 'Rate',
+      results.S1, results.v, 3);
 
     // Lineweaver-Burk: 1/v vs 1/S
     const lbS = [];
@@ -123,27 +158,23 @@ export class ChartManager {
       }
     }
     this._createChart('chart-lb', 'Lineweaver-Burk', '1/[S]', '1/v',
-      { x: lbS, y: lbV }, 0);
+      lbS, lbV, 0);
   }
 
   updateBatchData(results) {
     if (this.charts.length < 5) return;
 
-    this.charts[0].data.labels = results.t;
-    this.charts[0].data.datasets[0].data = results.S1;
-    this.charts[0].update('none');
+    const updates = [
+      [results.t, results.S1],
+      [results.t, results.P1],
+      [results.t, results.X],
+      [results.S1, results.v],
+    ];
 
-    this.charts[1].data.labels = results.t;
-    this.charts[1].data.datasets[0].data = results.P1;
-    this.charts[1].update('none');
-
-    this.charts[2].data.labels = results.t;
-    this.charts[2].data.datasets[0].data = results.X;
-    this.charts[2].update('none');
-
-    this.charts[3].data.labels = results.S1;
-    this.charts[3].data.datasets[0].data = results.v;
-    this.charts[3].update('none');
+    for (let i = 0; i < 4; i++) {
+      this.charts[i].data.datasets[0].data = zipXY(updates[i][0], updates[i][1]);
+      this.charts[i].update('none');
+    }
 
     // Lineweaver-Burk
     const lbS = [];
@@ -154,8 +185,7 @@ export class ChartManager {
         lbV.push(1 / results.v[i]);
       }
     }
-    this.charts[4].data.labels = lbS;
-    this.charts[4].data.datasets[0].data = lbV;
+    this.charts[4].data.datasets[0].data = zipXY(lbS, lbV);
     this.charts[4].update('none');
   }
 
@@ -201,8 +231,12 @@ export class ChartManager {
   _createBarChart(canvasId, title, xLabel, yLabel, data) {
     const { canvas, resetBtn } = createCanvas(this.container, canvasId);
     const opts = baseOptions(title);
-    opts.scales.x.title.text = xLabel;
+    // Bar charts use category axis
+    opts.scales.x.type = 'category';
+    delete opts.scales.x.ticks.callback;
+    delete opts.scales.x.ticks.maxTicksLimit;
     opts.scales.y.title.text = yLabel;
+    opts.scales.x.title.text = xLabel;
     opts.plugins.legend = { display: true, labels: { color: '#888' } };
 
     const chart = new Chart(canvas, {
@@ -220,25 +254,22 @@ export class ChartManager {
   addSliderOverlay(results) {
     if (this.charts.length < 5) return;
 
-    const datasets = [
-      results.S1, results.P1, results.X, results.v,
-    ];
+    const yData = [results.S1, results.P1, results.X, results.v];
     const xData = [results.t, results.t, results.t, results.S1];
 
     for (let i = 0; i < 4; i++) {
       const chart = this.charts[i];
-      // Keep only the main dataset
       if (chart.data.datasets.length > 1) {
         chart.data.datasets.splice(1);
       }
       chart.data.datasets.push({
-        data: datasets[i],
+        data: zipXY(xData[i], yData[i]),
         borderColor: '#ffffff55',
         borderWidth: 1,
         pointRadius: 0,
+        showLine: true,
         borderDash: [4, 4],
       });
-      chart.data.labels = xData[i];
       chart.update('none');
     }
 
@@ -256,10 +287,11 @@ export class ChartManager {
       lbChart.data.datasets.splice(1);
     }
     lbChart.data.datasets.push({
-      data: lbV,
+      data: zipXY(lbS, lbV),
       borderColor: '#ffffff55',
       borderWidth: 1,
       pointRadius: 0,
+      showLine: true,
       borderDash: [4, 4],
     });
     lbChart.update('none');

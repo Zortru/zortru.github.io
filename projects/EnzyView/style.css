@@ -94,6 +94,7 @@ body {
   border: 1px solid var(--card-border);
   border-radius: 8px;
   padding: 0.75rem;
+  overflow: hidden;
 }
 
 .section-card h2 {
@@ -121,6 +122,7 @@ body {
 .form-row input,
 .form-row select {
   flex: 1;
+  min-width: 0;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
   border-radius: 4px;
@@ -152,7 +154,28 @@ body {
 
 .coeff-grid .form-row label {
   min-width: 20px;
+  flex-shrink: 0;
 }
+
+.coeff-grid .form-row input {
+  width: 0;
+}
+
+/* ── Equation display ─────────────────────────────── */
+.equation-display {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.4rem;
+  font-family: "Cambria Math", "Latin Modern Math", "STIX Two Math", Georgia, serif;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--accent);
+  line-height: 1.8;
+}
+
+.equation-display.hidden { display: none; }
 
 /* ── Checkbox ─────────────────────────────────────── */
 .checkbox-row {
@@ -190,6 +213,21 @@ body {
   font-family: inherit;
 }
 .btn-calculate:hover { filter: brightness(1.1); }
+
+.btn-download {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-download:hover { background: var(--accent); color: #000; }
+.btn-download:disabled { opacity: 0.3; cursor: default; }
+.btn-download:disabled:hover { background: transparent; color: var(--accent); }
 
 .btn-reset {
   background: transparent;
@@ -242,13 +280,14 @@ body {
 
 /* ── Chart panel ──────────────────────────────────── */
 .chart-panel {
-  padding: 1rem;
-  overflow-y: auto;
+  padding: 0.5rem;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .chart-grid {
   display: grid;
-  gap: 1rem;
+  gap: 0.5rem;
   height: 100%;
 }
 
@@ -263,10 +302,13 @@ body {
 }
 
 @media (max-width: 900px) {
+  .chart-panel { overflow-y: auto; }
+
   .chart-grid.batch,
   .chart-grid.continuous {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
+    grid-auto-rows: 250px;
+    height: auto;
   }
 }
 
@@ -276,7 +318,8 @@ body {
   border: 1px solid var(--card-border);
   border-radius: 8px;
   padding: 0.5rem;
-  min-height: 200px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .chart-btn-bar {

@@ -1,29 +1,26 @@
-import { INTEGRATION_STEP, DATA_POINTS, CONVERSION_MAX, BISECTION_TOL, BISECTION_MAX_ITER } from './constants.js';
+import { DATA_POINTS, CONVERSION_MAX, BISECTION_TOL, BISECTION_MAX_ITER } from './constants.js';
 import { computeConcentrations } from './stoichiometry.js';
 
 /**
  * Batch reactor solver using trapezoidal rule.
  * Integrates: t = S10 * ∫(0→Xmax) dX / v(S1(X))
+ * Uses DATA_POINTS steps for the integration.
  */
 export function solveBatch(model, params) {
   const { S10, S20, P10, P20, a, b, c, d, Xmax, deactivation, kd } = params;
-  const h = INTEGRATION_STEP;
   const Xlimit = Math.min(Xmax, CONVERSION_MAX);
-  const nSteps = Math.ceil(Xlimit / h);
-  const saveInterval = Math.max(1, Math.floor(nSteps / DATA_POINTS));
+  const nSteps = DATA_POINTS;
+  const h = Xlimit / nSteps;
 
   const result = { t: [], S1: [], S2: [], P1: [], P2: [], X: [], v: [] };
 
   let t = 0;
-  let currentVmax = model.Vmax;
-  let prevIntegrand = 0;
+  const originalVmax = model.Vmax;
 
   // Evaluate integrand at X=0
   const conc0 = computeConcentrations(S10, S20, P10, P20, a, b, c, d, 0);
   const v0 = model.rate(conc0.S1);
-  if (v0 > 0) {
-    prevIntegrand = S10 / v0;
-  }
+  let prevIntegrand = v0 > 0 ? S10 / v0 : 0;
 
   // Save initial point
   result.t.push(0);
@@ -35,12 +32,12 @@ export function solveBatch(model, params) {
   result.v.push(v0);
 
   for (let i = 1; i <= nSteps; i++) {
-    const X = Math.min(i * h, Xlimit);
+    const X = i * h;
     const conc = computeConcentrations(S10, S20, P10, P20, a, b, c, d, X);
 
     // Deactivation: update Vmax based on accumulated time
     if (deactivation && kd > 0) {
-      model.Vmax = currentVmax * Math.exp(-kd * t);
+      model.Vmax = originalVmax * Math.exp(-kd * t);
     }
 
     const v = model.rate(conc.S1);
@@ -50,20 +47,18 @@ export function solveBatch(model, params) {
     t += 0.5 * (prevIntegrand + integrand) * h;
     prevIntegrand = integrand;
 
-    if (i % saveInterval === 0 || i === nSteps) {
-      result.t.push(t);
-      result.S1.push(conc.S1);
-      result.S2.push(conc.S2);
-      result.P1.push(conc.P1);
-      result.P2.push(conc.P2);
-      result.X.push(X);
-      result.v.push(v);
-    }
+    result.t.push(t);
+    result.S1.push(conc.S1);
+    result.S2.push(conc.S2);
+    result.P1.push(conc.P1);
+    result.P2.push(conc.P2);
+    result.X.push(X);
+    result.v.push(v);
   }
 
   // Restore original Vmax
   if (deactivation && kd > 0) {
-    model.Vmax = currentVmax;
+    model.Vmax = originalVmax;
   }
 
   return result;
