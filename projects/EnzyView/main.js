@@ -1,73 +1,110 @@
-// import {Reaction} from './modules/Reaction.js'
+import { createModel } from './modules/models.js';
+import { solveBatch, solveCSTR, solveCSTRSeries } from './modules/solvers.js';
+import { ChartManager } from './modules/charts.js';
+import { UIManager } from './modules/ui.js';
 
+const ui = new UIManager();
+const charts = new ChartManager('chart-container');
 
-class Reaction
-{
-    rate(parameters)
-    {
-        return 0;
+let lastResults = null;
+let lastInputs = null;
+
+// ── Event listeners ──────────────────────────────────
+
+ui.modeSelect.addEventListener('change', () => {
+  ui.setMode(ui.modeSelect.value);
+});
+
+ui.inhibitionSelect.addEventListener('change', () => {
+  ui.setInhibitionType(ui.inhibitionSelect.value);
+});
+
+ui.deactivationCheckbox.addEventListener('change', () => {
+  ui.setDeactivationVisible(ui.deactivationCheckbox.checked);
+});
+
+ui.calculateBtn.addEventListener('click', calculate);
+
+ui.resetBtn.addEventListener('click', () => {
+  ui.resetDefaults();
+  charts.destroy();
+  lastResults = null;
+  lastInputs = null;
+});
+
+// ── Slider ──────────────────────────────────────────
+
+let sliderRafId = null;
+
+function onSliderConfig() {
+  ui.configureSlider();
+}
+
+ui.sliderParam.addEventListener('change', onSliderConfig);
+ui.sliderMin.addEventListener('change', onSliderConfig);
+ui.sliderMax.addEventListener('change', onSliderConfig);
+ui.sliderStep.addEventListener('change', onSliderConfig);
+
+ui.sliderRange.addEventListener('input', () => {
+  ui.sliderValue.textContent = ui.sliderRange.value;
+  if (sliderRafId) cancelAnimationFrame(sliderRafId);
+  sliderRafId = requestAnimationFrame(() => runSlider(false));
+});
+
+ui.sliderRange.addEventListener('change', () => {
+  runSlider(true);
+});
+
+function runSlider(fullPrecision) {
+  if (!lastInputs || lastInputs.mode !== 'batch') return;
+
+  const paramName = ui.getSliderParam();
+  const paramValue = ui.getSliderValue();
+
+  const modifiedInputs = { ...lastInputs, [paramName]: paramValue };
+
+  const model = createModel(modifiedInputs.inhibition, modifiedInputs);
+  const results = solveBatch(model, modifiedInputs);
+
+  charts.addSliderOverlay(results);
+}
+
+// ── Calculate ───────────────────────────────────────
+
+function calculate() {
+  ui.clearErrors();
+
+  const inputs = ui.readInputs();
+  const errors = ui.validate(inputs);
+
+  if (errors.length > 0) {
+    ui.showErrors(errors);
+    return;
+  }
+
+  const model = createModel(inputs.inhibition, inputs);
+  lastInputs = inputs;
+
+  if (inputs.mode === 'batch') {
+    const results = solveBatch(model, inputs);
+    lastResults = results;
+
+    if (charts.charts.length >= 5) {
+      charts.updateBatchData(results);
+    } else {
+      charts.initBatchCharts(results);
     }
+  } else if (inputs.mode === 'cstr') {
+    const result = solveCSTR(model, inputs);
+    // Wrap single CSTR result as array for chart display
+    charts.initContinuousCharts([result]);
+    lastResults = [result];
+  } else if (inputs.mode === 'series') {
+    const results = solveCSTRSeries(model, inputs);
+    charts.initContinuousCharts(results);
+    lastResults = results;
+  }
+
+  // Configure slider with current state
+  ui.configureSlider();
 }
-
-class MichaelisMenten extends Reaction
-{
-    rate(parameters)
-    {
-        const vMax = parameters.vMax
-        const substrate = parameters.substrate
-        const km = parameters.km
-
-        return vMax * substrate / (km + substrate)
-    }
-}
-
-class parameters
-{
-    vMax
-    substrate
-    km    
-}
-
-function executa() {
-
-	event.preventDefault();
-    let param = new parameters
-    param.vMax = document.querySelector('#vmax').value
-    param.substrate = 1
-    param.km = 1    
-
-    const test1 = new MichaelisMenten
-
-    document.querySelector('#resultado').value = test1.rate(param)
-}
-document.querySelector('#button').addEventListener('click', executa);
-
-const labels = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-  ];
-
-  const data = {
-    labels: labels,
-    datasets: [{
-      label: 'My First dataset',
-      backgroundColor: 'rgb(255, 99, 132)',
-      borderColor: 'rgb(255, 99, 132)',
-      data: [0, 10, 5, 2, 20, 30, 45],
-    }]
-  };
-
-  const config = {
-    type: 'line',
-    data: data,
-    options: {}
-  };
-
-  const myChart = new Chart(
-    document.getElementById('myChart'),
-    config
-  );

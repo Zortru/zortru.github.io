@@ -1,0 +1,299 @@
+/* ── Tokens (match root site) ──────────────────────── */
+:root {
+  --bg: #0a0a0a;
+  --text: #f5f5f5;
+  --text-muted: #888;
+  --accent: #00FF67;
+  --card-bg: #111;
+  --card-border: #222;
+  --input-bg: #181818;
+  --input-border: #333;
+  --error: #ff4444;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #fff;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --card-bg: #fafafa;
+    --card-border: #e0e0e0;
+    --input-bg: #f0f0f0;
+    --input-border: #ccc;
+    --error: #cc0000;
+  }
+}
+
+/* ── Reset & base ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Header ───────────────────────────────────────── */
+.site-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.breadcrumb {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.breadcrumb:hover { color: var(--accent); }
+
+.site-header h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── Main layout ──────────────────────────────────── */
+.app-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  height: calc(100vh - 56px);
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+/* ── Input panel ──────────────────────────────────── */
+.input-panel {
+  padding: 1rem;
+  overflow-y: auto;
+  border-right: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .input-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--card-border);
+    max-height: 50vh;
+  }
+}
+
+.section-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.section-card h2 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Form elements ────────────────────────────────── */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.form-row label {
+  font-size: 0.8rem;
+  min-width: 60px;
+  color: var(--text-muted);
+}
+
+.form-row input,
+.form-row select {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.form-row input:focus,
+.form-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-row input.error {
+  border-color: var(--error);
+}
+
+.coeff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.coeff-grid .form-row {
+  margin-bottom: 0;
+}
+
+.coeff-grid .form-row label {
+  min-width: 20px;
+}
+
+/* ── Checkbox ─────────────────────────────────────── */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.checkbox-row label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Buttons ──────────────────────────────────────── */
+.btn-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-calculate {
+  flex: 1;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-calculate:hover { filter: brightness(1.1); }
+
+.btn-reset {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-reset:hover { color: var(--text); border-color: var(--text-muted); }
+
+/* ── Slider ───────────────────────────────────────── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.slider-value {
+  font-size: 0.8rem;
+  color: var(--accent);
+  min-width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Errors ───────────────────────────────────────── */
+.error-container {
+  background: var(--error);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.error-container.hidden { display: none; }
+
+.error-msg { margin-bottom: 0.2rem; }
+.error-msg:last-child { margin-bottom: 0; }
+
+/* ── Hidden utility ───────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Chart panel ──────────────────────────────────── */
+.chart-panel {
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.chart-grid {
+  display: grid;
+  gap: 1rem;
+  height: 100%;
+}
+
+.chart-grid.batch {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+.chart-grid.continuous {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+@media (max-width: 900px) {
+  .chart-grid.batch,
+  .chart-grid.continuous {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+}
+
+.chart-wrapper {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-height: 200px;
+}
+
+.chart-btn-bar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+}
+
+.btn-reset-zoom {
+  background: var(--input-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-reset-zoom:hover { color: var(--text); }
